@@ -18,7 +18,7 @@ Clone the repository and open it in your preferred IDE (e.g., IntelliJ IDEA, Ecl
 1. Open the project in your IDE.
 2. Add program arguments in the IDE's run configuration:
    ```
-   --url "https://your-redmine-instance/wiki-page"
+   --url https://www.redmine.org/projects/redmine/wiki
    ```
   This command fetches the content of the specified Redmine Wiki page and prepares it for conversion.
 3. Run the application from the IDE.

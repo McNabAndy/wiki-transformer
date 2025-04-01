@@ -52,6 +52,7 @@ public class WikiTransformerCommand implements Runnable {
     @Override
     public void run() {
         getRedmineWikiPage(redmineService, pandocService);
+        System.exit(0); // Zde to ukončí JVM po dokončení příkazu - musím ještě ošetřit vyjímky
     }
 
     /**

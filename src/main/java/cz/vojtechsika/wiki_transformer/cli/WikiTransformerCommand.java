@@ -3,9 +3,14 @@ package cz.vojtechsika.wiki_transformer.cli;
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * CLI command for transforming a Redmine Wiki page written in Textile format to MediaWiki format.
@@ -26,12 +31,19 @@ public class WikiTransformerCommand implements Runnable {
      */
     private final  PandocService pandocService;
 
+    /**
+     * Path object representing the storage location
+     */
+    private Path filePath;
 
     /**
      * The URL of the Redmine Wiki page to be transformed.
      */
     @CommandLine.Option(names = "--url", description = "URL of the Redmine Wiki page", required = true)
     private String wikiUrl;
+
+    @CommandLine.Option(names = {"--output-dir", "-o"}, description = "File path for outputs", required = true )
+    private String outputDirectory;
 
 
     /**
@@ -51,6 +63,7 @@ public class WikiTransformerCommand implements Runnable {
      */
     @Override
     public void run() {
+        initializeStoragePath();
         getRedmineWikiPage(redmineService, pandocService);
         System.exit(0); // Zde to ukončí JVM po dokončení příkazu - musím ještě ošetřit vyjímky
     }
@@ -74,7 +87,25 @@ public class WikiTransformerCommand implements Runnable {
         String contentWikiPage = response.getWikiPage().getText();
 
         // Convert and save the content
-        pandocService.convertTextileToMediaWiki(contentWikiPage);
+        pandocService.convertTextileToMediaWiki(contentWikiPage, filePath, outputDirectory);
 
+    }
+
+    // Vytvořit metodu pro kontrolu a ověření cesty tu apka mužu rovnou předat Pandocu - SoC princip - zodpovednosta za to že existuje správná cesta nese CLI třída Pandoc už se postará pouze o převod => jedná se očistčí
+    /**
+     * Initializes the storage path
+     */
+    private void initializeStoragePath(){
+        try {
+            filePath = Path.of(outputDirectory);
+
+            // If the directory does not exist, it will be created automatically.
+            Files.createDirectories(filePath);
+
+            System.out.println("Output directory path : " + filePath.toAbsolutePath() +"\n");
+
+        } catch (IOException e) {
+            System.out.println("Error creating storage path: " + e.getMessage());
+        }
     }
 }

@@ -17,41 +17,13 @@ public class PandocServiceImpl implements PandocService {
 
 
     /**
-     * Directory path where converted files will be stored.
-     */
-    @Value("${file.storage.path}")
-    private String outputDirectory;
-
-    /**
-     * Path object representing the storage location
-     */
-    private Path filePath;
-
-    /**
-     * Initializes the storage path after bean creation.
-     */
-    @PostConstruct
-    private void initializeStoragePath(){
-        try {
-            filePath = Path.of(outputDirectory);
-
-            // If the directory does not exist, it will be created automatically.
-            Files.createDirectories(filePath);
-
-            System.out.println("Output directory path : " + filePath.toAbsolutePath() +"\n");
-
-        } catch (IOException e) {
-            System.out.println("Error creating storage path: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Converts Textile formatted text to MediaWiki format using Pandoc.
      *
-     * @param content The Textile formatted text content to be converted.
+     * @param content the Textile-formatted text to be converted.
+     * @param filePath   the path where the temporary input file will be created
+     * @param outputDirectory the directory where the final converted MediaWiki file will be saved
      */
     @Override
-    public void convertTextileToMediaWiki(String content) {
+    public void convertTextileToMediaWiki(String content, Path filePath, String outputDirectory) {
         try {
 
             // Create a temporary file for storing Textile data

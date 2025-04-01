@@ -23,15 +23,16 @@ public class PandocServiceImpl implements PandocService {
      * @param outputDirectory the directory where the final converted MediaWiki file will be saved
      */
     @Override
-    public void convertTextileToMediaWiki(String content, Path filePath, String outputDirectory) {
+    public void convertTextileToMediaWiki(String content, String fileName, Path filePath, String outputDirectory) {
         try {
 
             // Create a temporary file for storing Textile data
-            Path tempInputFile = Files.createTempFile(filePath,"tempInput",".textile");
+            Path tempInputFile = Files.createTempFile("wikiTempInput",".textile");
             Files.writeString(tempInputFile, content);
 
+
             // Define the output file location
-            Path outputFile = Path.of(outputDirectory, "wiki-page.mediawiki");
+            Path outputFile = Path.of(outputDirectory, fileName + ".mediawiki");
 
             // Execute external Pandoc process
             ProcessBuilder processBuilder = new ProcessBuilder("pandoc", "-f", "textile", "-t", "mediawiki", tempInputFile.toString(), "-o", outputFile.toString());

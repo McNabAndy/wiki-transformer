@@ -12,5 +12,5 @@ public interface PandocService {
      *
      * @param content the Textile-formatted text to be converted.
      */
-    void convertTextileToMediaWiki(String content, Path filePath, String outputDirectory);
+    void convertTextileToMediaWiki(String content, String fileName, Path filePath, String outputDirectory);
 }

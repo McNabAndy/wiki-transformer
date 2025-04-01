@@ -3,6 +3,7 @@ package cz.vojtechsika.wiki_transformer.cli;
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
+import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -83,13 +84,19 @@ public class WikiTransformerCommand implements Runnable {
         // Fetch data from Redmine API
         RedmineWikiResponseDTO response = redmineService.getRedmine(jsonWikiUrl);
 
+        // Tohle dát do vlastní metody
+        String originalTitle = response.getWikiPage().getTitle();
+        String sanitizeTitle = FileNameUtil.sanitizeFileName(originalTitle);
+
         // Extract the content from the response
         String contentWikiPage = response.getWikiPage().getText();
 
         // Convert and save the content
-        pandocService.convertTextileToMediaWiki(contentWikiPage, filePath, outputDirectory);
+        pandocService.convertTextileToMediaWiki(contentWikiPage, sanitizeTitle, filePath, outputDirectory);
 
     }
+
+
 
     // Vytvořit metodu pro kontrolu a ověření cesty tu apka mužu rovnou předat Pandocu - SoC princip - zodpovednosta za to že existuje správná cesta nese CLI třída Pandoc už se postará pouze o převod => jedná se očistčí
     /**

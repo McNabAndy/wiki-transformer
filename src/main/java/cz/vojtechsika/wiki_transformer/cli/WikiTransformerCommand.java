@@ -4,13 +4,14 @@ import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
 /**
@@ -64,7 +65,8 @@ public class WikiTransformerCommand implements Runnable {
      */
     @Override
     public void run() {
-        initializeStoragePath();
+        initializePath(outputDirectory);
+        initializeOutputDirectory(filePath);
         getRedmineWikiPage(redmineService, pandocService);
         System.exit(0); // Zde to ukončí JVM po dokončení příkazu - musím ještě ošetřit vyjímky
     }
@@ -84,35 +86,65 @@ public class WikiTransformerCommand implements Runnable {
         // Fetch data from Redmine API
         RedmineWikiResponseDTO response = redmineService.getRedmine(jsonWikiUrl);
 
-        // Tohle dát do vlastní metody
-        String originalTitle = response.getWikiPage().getTitle();
-        String sanitizeTitle = FileNameUtil.sanitizeFileName(originalTitle);
+        // Create unique file name from title and add suffix
+        String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
+
 
         // Extract the content from the response
         String contentWikiPage = response.getWikiPage().getText();
 
         // Convert and save the content
-        pandocService.convertTextileToMediaWiki(contentWikiPage, sanitizeTitle, filePath, outputDirectory);
+        pandocService.convertTextileToMediaWiki(contentWikiPage, uniqueTitle, filePath, outputDirectory);
 
+    }
+
+    /**
+     * Creates a unique, filesystem-safe title by sanitizing the input and appending a unique suffix.
+     *
+     * @param theTitle the original title to be sanitized
+     * @return a unique and safe title string
+     */
+    private String createUniqueTitle(String theTitle) {
+        String sanitizeTitle = FileNameUtil.sanitizeFileName(theTitle);
+        return sanitizeTitle + "_" + FileNameUtil.createUniqueSuffix();
     }
 
 
 
     // Vytvořit metodu pro kontrolu a ověření cesty tu apka mužu rovnou předat Pandocu - SoC princip - zodpovednosta za to že existuje správná cesta nese CLI třída Pandoc už se postará pouze o převod => jedná se očistčí
-    /**
-     * Initializes the storage path
-     */
-    private void initializeStoragePath(){
+
+
+
+    private void initializePath(String outputDirectory) {
         try {
-            filePath = Path.of(outputDirectory);
-
-            // If the directory does not exist, it will be created automatically.
-            Files.createDirectories(filePath);
-
-            System.out.println("Output directory path : " + filePath.toAbsolutePath() +"\n");
-
-        } catch (IOException e) {
-            System.out.println("Error creating storage path: " + e.getMessage());
+            filePath = Path.of(outputDirectory);   // nastaví třídě atribut Path který pak mužu dál zpracovat
+        } catch (InvalidPathException e) {
+            System.out.println("Error: The path can not be converted to a valid path: " + e.getMessage());
+            System.exit(1);
         }
     }
+
+
+    private void initializeOutputDirectory(Path filePath){
+        try {
+            // If the directory does not exist, it will be created automatically.
+            Files.createDirectories(filePath);
+            System.out.println("Output directory path : " + filePath.toAbsolutePath() +"\n");
+        } catch (FileAlreadyExistsException e) {
+            System.out.println("Error: The path exists but it is not directory  " + e.getMessage());
+            System.exit(1);
+        } catch (SecurityException e) {
+            System.out.println("Error: You do not have permission to write to the output directory " + e.getMessage());
+            System.exit(1);
+        } catch (IOException e) {
+            System.out.println("Error: creating output directory: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+
+
 }
+
+
+

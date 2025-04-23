@@ -4,7 +4,9 @@ import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /**
  * Service class responsible for handling communication with the Redmine API.
@@ -38,12 +40,21 @@ public class RedmineServiceImpl implements RedmineService {
      */
     @Override
     public RedmineWikiResponseDTO getRedmine(String url) {
+        try{
+            ResponseEntity<RedmineWikiResponseDTO> response = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .toEntity(RedmineWikiResponseDTO.class);
 
-        ResponseEntity<RedmineWikiResponseDTO> response = restClient.get()
-                .uri(url)
-                .retrieve()
-                .toEntity(RedmineWikiResponseDTO.class);
+            return response.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            System.out.println("Wiki page not found");
+            return null;
+        } catch (RestClientException e) {
+            System.out.println("Communication error with the server");
+            return null;
+        }
 
-        return response.getBody();
+
     }
 }

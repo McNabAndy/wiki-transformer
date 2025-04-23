@@ -1,6 +1,7 @@
 package cz.vojtechsika.wiki_transformer.cli;
 
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
+import cz.vojtechsika.wiki_transformer.exception.ExceptionHandler;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
@@ -34,6 +35,11 @@ public class WikiTransformerCommand implements Runnable {
     private final  PandocService pandocService;
 
     /**
+     *  Onstance of {@link ExceptionHandler}
+     */
+    private ExceptionHandler exceptionHandler;
+
+    /**
      * Path object representing the storage location
      */
     private Path filePath;
@@ -55,9 +61,10 @@ public class WikiTransformerCommand implements Runnable {
      * @param thePandocService  The service responsible for converting Textile to MediaWiki format.
      */
     @Autowired
-    public WikiTransformerCommand(RedmineService theRedmineService, PandocService thePandocService) {
+    public WikiTransformerCommand(RedmineService theRedmineService, PandocService thePandocService, ExceptionHandler theExceptionHandler) {
         this.redmineService = theRedmineService;
         this.pandocService = thePandocService;
+        this.exceptionHandler = theExceptionHandler;
     }
 
     /**
@@ -85,6 +92,9 @@ public class WikiTransformerCommand implements Runnable {
 
         // Fetch data from Redmine API
         RedmineWikiResponseDTO response = redmineService.getRedmine(jsonWikiUrl);
+        if (response == null) { // pokud mi to vrátí null vypíše se mi chyba a tato vrstaa ukončí aplikaci
+            exceptionHandler.exitWithError("Could not get Redmine Wiki page");
+        }
 
         // Create unique file name from title and add suffix
         String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
@@ -119,8 +129,7 @@ public class WikiTransformerCommand implements Runnable {
         try {
             filePath = Path.of(outputDirectory);   // nastaví třídě atribut Path který pak mužu dál zpracovat
         } catch (InvalidPathException e) {
-            System.out.println("Error: The path can not be converted to a valid path: " + e.getMessage());
-            System.exit(1);
+            exceptionHandler.exitWithError("The path can not be converted to a valid path: ", e);
         }
     }
 
@@ -130,19 +139,30 @@ public class WikiTransformerCommand implements Runnable {
             // If the directory does not exist, it will be created automatically.
             Files.createDirectories(filePath);
             System.out.println("Output directory path : " + filePath.toAbsolutePath() +"\n");
+            checkWrite(filePath);  // ruční kontrola zda lze do uvedené cesty opravdu zapisovat, pokud ne ukončí mi to program
         } catch (FileAlreadyExistsException e) {
-            System.out.println("Error: The path exists but it is not directory  " + e.getMessage());
-            System.exit(1);
+            exceptionHandler.exitWithError("The path exists but it is not directory", e);
         } catch (SecurityException e) {
-            System.out.println("Error: You do not have permission to write to the output directory " + e.getMessage());
-            System.exit(1);
+            exceptionHandler.exitWithError("You do not have permission to write to the output directory", e);
         } catch (IOException e) {
-            System.out.println("Error: creating output directory: " + e.getMessage());
-            System.exit(1);
+            exceptionHandler.exitWithError("Failed to create or write to the specified output path", e);
         }
     }
 
 
+
+    private void checkWrite(Path filePath) throws IOException {
+        Path testPath = filePath.resolve("test.txt");
+        try {
+            Files.createFile(testPath);
+            Files.deleteIfExists(testPath);
+        } catch (IOException e) {
+            throw new IOException("Failed to write to the specified output path: " + filePath.toAbsolutePath(), e);
+        } catch (SecurityException e) {
+            throw new IOException("Write access denied for the directory: " + filePath.toAbsolutePath(), e);
+        }
+
+    }
 
 }
 

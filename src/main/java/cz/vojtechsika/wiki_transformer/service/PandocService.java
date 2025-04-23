@@ -1,5 +1,6 @@
 package cz.vojtechsika.wiki_transformer.service;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -12,5 +13,5 @@ public interface PandocService {
      *
      * @param content the Textile-formatted text to be converted.
      */
-    void convertTextileToMediaWiki(String content, String fileName, Path filePath, String outputDirectory);
+    void convertTextileToMediaWiki(String content, String fileName, Path filePath, String outputDirectory) throws IOException;
 }

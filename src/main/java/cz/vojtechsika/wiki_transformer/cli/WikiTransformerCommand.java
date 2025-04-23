@@ -91,10 +91,7 @@ public class WikiTransformerCommand implements Runnable {
         System.out.println("Fetching Redmine Wiki page from url: " + jsonWikiUrl + "\n");
 
         // Fetch data from Redmine API
-        RedmineWikiResponseDTO response = redmineService.getRedmine(jsonWikiUrl);
-        if (response == null) { // pokud mi to vrátí null vypíše se mi chyba a tato vrstaa ukončí aplikaci
-            exceptionHandler.exitWithError("Could not get Redmine Wiki page");
-        }
+        RedmineWikiResponseDTO response = fetchRedmineWikiPage(jsonWikiUrl);
 
         // Create unique file name from title and add suffix
         String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
@@ -104,7 +101,8 @@ public class WikiTransformerCommand implements Runnable {
         String contentWikiPage = response.getWikiPage().getText();
 
         // Convert and save the content
-        pandocService.convertTextileToMediaWiki(contentWikiPage, uniqueTitle, filePath, outputDirectory);
+        runPandocService(contentWikiPage, uniqueTitle);
+
 
     }
 
@@ -144,14 +142,32 @@ public class WikiTransformerCommand implements Runnable {
             exceptionHandler.exitWithError("The path exists but it is not directory", e);
         } catch (SecurityException e) {
             exceptionHandler.exitWithError("You do not have permission to write to the output directory", e);
+        } catch (UnsupportedOperationException e){
+            exceptionHandler.exitWithError("Unsupported operation while writing to the output directory ", e);
         } catch (IOException e) {
             exceptionHandler.exitWithError("Failed to create or write to the specified output path", e);
         }
     }
 
+    private RedmineWikiResponseDTO fetchRedmineWikiPage(String jsonWikiUrl) {
+        RedmineWikiResponseDTO response = redmineService.getRedmine(jsonWikiUrl);
+        if (response == null) { // pokud mi to vrátí null vypíše se mi chyba a tato vrstaa ukončí aplikaci
+            exceptionHandler.exitWithError("Could not get Redmine Wiki page");
+        }
+        return response;
+    }
 
 
-    private void checkWrite(Path filePath) throws IOException {
+    private void runPandocService(String contentWikiPage, String uniqueTitle) {
+        try {
+            pandocService.convertTextileToMediaWiki(contentWikiPage, uniqueTitle, filePath, outputDirectory);
+        } catch (IOException e) {
+            exceptionHandler.exitWithError("Failed during run Pandoc", e);
+        }
+    }
+
+
+    private void checkWrite(Path filePath) throws IOException {  // nemel bych zde osšetřit  i tu IvalidPAthException ?
         Path testPath = filePath.resolve("test.txt");
         try {
             Files.createFile(testPath);

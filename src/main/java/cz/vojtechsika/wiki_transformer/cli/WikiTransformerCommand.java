@@ -9,7 +9,6 @@ import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import picocli.CommandLine;
-
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -36,7 +35,7 @@ public class WikiTransformerCommand implements Runnable {
     private final  PandocService pandocService;
 
     /**
-     *  Onstance of {@link ExceptionHandler}
+     *  Instance of {@link ExceptionHandler}
      */
     private ExceptionHandler exceptionHandler;
 
@@ -51,6 +50,9 @@ public class WikiTransformerCommand implements Runnable {
     @CommandLine.Option(names = "--url", description = "URL of the Redmine Wiki page", required = true)
     private String wikiUrl;
 
+    /**
+     *  CLI option for specifying the output directory where the converted MediaWiki file will be saved..
+     */
     @CommandLine.Option(names = {"--output-dir", "-o"}, description = "File path for outputs", required = true )
     private String outputDirectory;
 
@@ -58,8 +60,9 @@ public class WikiTransformerCommand implements Runnable {
     /**
      * Constructor that initializes the required services.
      *
-     * @param theRedmineService The service responsible for fetching Redmine wiki pages.
-     * @param thePandocService  The service responsible for converting Textile to MediaWiki format.
+     * @param theRedmineService    the service responsible for fetching Redmine Wiki page data
+     * @param thePandocService     the service responsible for converting content from Textile to MediaWiki format
+     * @param theExceptionHandler  the centralized exception handler used to manage CLI errors and terminate gracefully
      */
     @Autowired
     public WikiTransformerCommand(RedmineService theRedmineService, PandocService thePandocService, ExceptionHandler theExceptionHandler) {
@@ -76,7 +79,7 @@ public class WikiTransformerCommand implements Runnable {
         initializePath(outputDirectory);
         initializeOutputDirectory(filePath);
         getRedmineWikiPage(redmineService, pandocService);
-        System.exit(0); // Zde to ukončí JVM po dokončení příkazu - musím ještě ošetřit vyjímky
+        System.exit(0);
     }
 
     /**
@@ -86,18 +89,16 @@ public class WikiTransformerCommand implements Runnable {
      * @param pandocService  The service used to convert Textile format to MediaWiki format.
      */
     private void getRedmineWikiPage(RedmineService redmineService, PandocService pandocService) {
-
         // Construct the API endpoint for fetching the Redmine Wiki page
         String jsonWikiUrl = createJsonUrl(wikiUrl);
-
         // Fetch data from Redmine API
         RedmineWikiResponseDTO response = fetchRedmineWikiPage(jsonWikiUrl);
+
 
         // Create unique file name from title and add suffix
         String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
         // Extract the content from the response
         String contentWikiPage = response.getWikiPage().getText();
-
         // Convert and save the content
         runPandocService(contentWikiPage, uniqueTitle);
     }
@@ -114,16 +115,25 @@ public class WikiTransformerCommand implements Runnable {
     }
 
 
-
+    /**
+     * Initializes the output path from the provided string and validates it as a {@link Path}.
+     *
+     * @param outputDirectory the output directory path as a string, provided via CLI
+     */
     private void initializePath(String outputDirectory) {
         try {
-            filePath = Path.of(outputDirectory);   // nastaví třídě atribut Path který pak mužu dál zpracovat
+            filePath = Path.of(outputDirectory);   // nastaví třídě atribut filePath který pak mužu dál zpracovat
         } catch (InvalidPathException e) {
             exceptionHandler.exitWithError("The path can not be converted to a valid path: ", e);
         }
     }
 
 
+    /**
+     * Creates the output directory if it does not exist and ensures it is writable.
+     *
+     * @param filePath the path to the output directory
+     */
     private void initializeOutputDirectory(Path filePath){
         try {
             // If the directory does not exist, it will be created automatically.
@@ -141,6 +151,13 @@ public class WikiTransformerCommand implements Runnable {
         }
     }
 
+
+    /**
+     * Retrieves the content of a Redmine Wiki page in JSON format from the provided URL.
+     *
+     * @param jsonWikiUrl the full URL with .json suffix to fetch the wiki page data
+     * @return the deserialized {@link RedmineWikiResponseDTO} containing wiki content
+     */
     private RedmineWikiResponseDTO fetchRedmineWikiPage(String jsonWikiUrl) {
         try{
             return redmineService.getRedmine(jsonWikiUrl);
@@ -150,7 +167,12 @@ public class WikiTransformerCommand implements Runnable {
         }
     }
 
-
+    /**
+     * Runs the conversion logic using {@link PandocService} to transform the wiki content.
+     *
+     * @param contentWikiPage the raw Textile content of the Redmine Wiki page
+     * @param uniqueTitle     the sanitized and timestamped output file name
+     */
     private void runPandocService(String contentWikiPage, String uniqueTitle) {
         try {
             pandocService.convertTextileToMediaWiki(contentWikiPage, uniqueTitle, filePath, outputDirectory);
@@ -159,6 +181,12 @@ public class WikiTransformerCommand implements Runnable {
         }
     }
 
+    /**
+     * Builds a complete Redmine API URL by appending the .json suffix to the provided base URL.
+     *
+     * @param wikiUrl the original wiki page URL
+     * @return the modified URL pointing to the JSON version of the page
+     */
     private String createJsonUrl(String wikiUrl) {
         if (wikiUrl == null) {
             exceptionHandler.exitWithError("WikiUrl can not be null");
@@ -168,6 +196,12 @@ public class WikiTransformerCommand implements Runnable {
     }
 
 
+    /**
+     * Checks whether the specified path is writable by attempting to create and delete a temporary file.
+     *
+     * @param filePath the directory to be validated for write permissions
+     * @throws IOException if the directory is not writable or an error occurs during testing
+     */
     private void checkWrite(Path filePath) throws IOException {  // nemel bych zde osšetřit  i tu IvalidPAthException ?
         Path testPath = filePath.resolve("test.txt");
         try {
@@ -178,7 +212,6 @@ public class WikiTransformerCommand implements Runnable {
         } catch (SecurityException e) {
             throw new IOException("Write access denied for the directory: " + filePath.toAbsolutePath(), e);
         }
-
     }
 
 }

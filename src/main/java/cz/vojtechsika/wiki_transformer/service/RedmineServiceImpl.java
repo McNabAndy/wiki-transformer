@@ -34,10 +34,14 @@ public class RedmineServiceImpl implements RedmineService {
 
 
     /**
-     * Sends a GET request to the specified Redmine API URL and retrieves the response.
+     * Retrieves a Redmine Wiki page from the specified JSON endpoint and deserializes it into a DTO.
+     * This method sends a GET request to the provided URL, expecting a JSON response that represents
+     * a Redmine Wiki page. The response body is mapped to a {@link RedmineWikiResponseDTO} object.
      *
-     * @param url The URL from which to fetch data.
-     * @return The response body containing the JSON data.
+     * @param url the full URL of the Redmine Wiki page with the {@code .json} suffix
+     * @return the parsed {@link RedmineWikiResponseDTO} containing the wiki page data
+     * @throws RedmineFetchException if the wiki page is not found (404), or if any communication or
+     * deserialization error occurs while calling the Redmine API
      */
     @Override
     public RedmineWikiResponseDTO getRedmine(String url) throws RedmineFetchException {
@@ -53,7 +57,5 @@ public class RedmineServiceImpl implements RedmineService {
         } catch (RestClientException e) {
             throw new RedmineFetchException("Communication error with the server", e);
         }
-
-
     }
 }

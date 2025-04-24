@@ -1,4 +1,5 @@
 package cz.vojtechsika.wiki_transformer.service;
+
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -13,11 +14,15 @@ import java.nio.file.Path;
 public class PandocServiceImpl implements PandocService {
 
 
+
     /**
+     * Converts content from Textile format to MediaWiki format and saves the result as a file.
      *
-     * @param content the Textile-formatted text to be converted.
-     * @param filePath   the path where the temporary input file will be created
-     * @param outputDirectory the directory where the final converted MediaWiki file will be saved
+     * @param content          the Textile-formatted text to be converted
+     * @param fileName         the sanitized and unique name of the output file (without extension)
+     * @param filePath         the path to the output directory
+     * @param outputDirectory  the output directory as a string, used for final file generation
+     * @throws IOException if any I/O error occurs during the conversion process
      */
     @Override
     public void convertTextileToMediaWiki(String content, String fileName, Path filePath, String outputDirectory) throws IOException {
@@ -35,10 +40,16 @@ public class PandocServiceImpl implements PandocService {
             deleteTempFile(tempInputFile);
 
             System.out.println("Pandoc converted Textile to MediaWiki");
-
     }
 
 
+    /**
+     * Creates a temporary file in the system's temporary directory and writes the Textile content into it.
+     *
+     * @param content the content to write into the temporary file
+     * @return the path to the created temporary file
+     * @throws IOException if the file cannot be created or written
+     */
     private Path createTempFile(String content) throws IOException {
         try{
             Path tempInputFile = Files.createTempFile("wikiTempInput",".textile");
@@ -56,6 +67,15 @@ public class PandocServiceImpl implements PandocService {
         }
     }
 
+
+    /**
+     * Creates the final output file path by combining the target directory and file name.
+     *
+     * @param outputDirectory the output directory as a string
+     * @param fileName        the name of the output file (without extension)
+     * @return the full path to the output file
+     * @throws IOException if the path is invalid or cannot be created
+     */
     private Path createOutputFile(String outputDirectory, String fileName) throws IOException {
         try {
             return Path.of(outputDirectory, fileName + ".mediawiki");
@@ -66,6 +86,14 @@ public class PandocServiceImpl implements PandocService {
         }
     }
 
+
+    /**
+     * Executes the Pandoc command-line tool to convert the content from Textile to MediaWiki format.
+     *
+     * @param tempInputFile the path to the temporary input file
+     * @param outputFile    the path to the output file to be generated
+     * @throws IOException if Pandoc cannot be executed or fails during processing
+     */
     private void runPandoc(Path tempInputFile, Path outputFile) throws IOException {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("pandoc", "-f", "textile", "-t", "mediawiki", tempInputFile.toString(), "-o", outputFile.toString());
@@ -93,6 +121,12 @@ public class PandocServiceImpl implements PandocService {
 
     }
 
+    /**
+     * Deletes the temporary input file after conversion is complete.
+     *
+     * @param tempInputFile the path to the temporary file to be deleted
+     * @throws IOException if the file cannot be deleted
+     */
     private void deleteTempFile(Path tempInputFile) throws IOException {
         try {
             Files.deleteIfExists(tempInputFile);

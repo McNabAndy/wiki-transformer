@@ -1,6 +1,7 @@
 package cz.vojtechsika.wiki_transformer.service;
 
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
+import cz.vojtechsika.wiki_transformer.exception.RedmineFetchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,7 @@ public class RedmineServiceImpl implements RedmineService {
      * @return The response body containing the JSON data.
      */
     @Override
-    public RedmineWikiResponseDTO getRedmine(String url) {
+    public RedmineWikiResponseDTO getRedmine(String url) throws RedmineFetchException {
         try{
             ResponseEntity<RedmineWikiResponseDTO> response = restClient.get()
                     .uri(url)
@@ -48,11 +49,9 @@ public class RedmineServiceImpl implements RedmineService {
 
             return response.getBody();
         } catch (HttpClientErrorException.NotFound e) {
-            System.out.println("Wiki page not found");
-            return null;
+            throw new RedmineFetchException("Wiki page not found", e);
         } catch (RestClientException e) {
-            System.out.println("Communication error with the server");
-            return null;
+            throw new RedmineFetchException("Communication error with the server", e);
         }
 
 

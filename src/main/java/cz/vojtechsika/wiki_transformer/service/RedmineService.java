@@ -1,6 +1,7 @@
 package cz.vojtechsika.wiki_transformer.service;
 
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
+import cz.vojtechsika.wiki_transformer.exception.RedmineFetchException;
 
 /**
  * Service interface for interacting with the Redmine API.
@@ -14,5 +15,5 @@ public interface RedmineService {
      * @param url the Redmine API endpoint to fetch data from.
      * @return a {@link RedmineWikiResponseDTO} containing the retrieved wiki page data.
      */
-    RedmineWikiResponseDTO getRedmine(String url);
+    RedmineWikiResponseDTO getRedmine(String url) throws RedmineFetchException;
 }

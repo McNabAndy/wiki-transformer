@@ -2,6 +2,7 @@ package cz.vojtechsika.wiki_transformer.cli;
 
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
 import cz.vojtechsika.wiki_transformer.exception.ExceptionHandler;
+import cz.vojtechsika.wiki_transformer.exception.RedmineFetchException;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
@@ -87,23 +88,19 @@ public class WikiTransformerCommand implements Runnable {
     private void getRedmineWikiPage(RedmineService redmineService, PandocService pandocService) {
 
         // Construct the API endpoint for fetching the Redmine Wiki page
-        String jsonWikiUrl = wikiUrl + ".json";
-        System.out.println("Fetching Redmine Wiki page from url: " + jsonWikiUrl + "\n");
+        String jsonWikiUrl = createJsonUrl(wikiUrl);
 
         // Fetch data from Redmine API
         RedmineWikiResponseDTO response = fetchRedmineWikiPage(jsonWikiUrl);
 
         // Create unique file name from title and add suffix
-        String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
-
+        String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());    // tady mi kompilátor hlásí že by mohla nastat vyjimka NullPointerException, kvuli tomu že response muže být dle kodu null (ve skutečnosti nikdy nemuže  být null protože mi to handler ukončí...)
 
         // Extract the content from the response
         String contentWikiPage = response.getWikiPage().getText();
 
         // Convert and save the content
         runPandocService(contentWikiPage, uniqueTitle);
-
-
     }
 
     /**
@@ -116,10 +113,6 @@ public class WikiTransformerCommand implements Runnable {
         String sanitizeTitle = FileNameUtil.sanitizeFileName(theTitle);
         return sanitizeTitle + "_" + FileNameUtil.createUniqueSuffix();
     }
-
-
-
-    // Vytvořit metodu pro kontrolu a ověření cesty tu apka mužu rovnou předat Pandocu - SoC princip - zodpovednosta za to že existuje správná cesta nese CLI třída Pandoc už se postará pouze o převod => jedná se očistčí
 
 
 
@@ -150,11 +143,12 @@ public class WikiTransformerCommand implements Runnable {
     }
 
     private RedmineWikiResponseDTO fetchRedmineWikiPage(String jsonWikiUrl) {
-        RedmineWikiResponseDTO response = redmineService.getRedmine(jsonWikiUrl);
-        if (response == null) { // pokud mi to vrátí null vypíše se mi chyba a tato vrstaa ukončí aplikaci
-            exceptionHandler.exitWithError("Could not get Redmine Wiki page");
+        try{
+            return redmineService.getRedmine(jsonWikiUrl);
+        } catch (RedmineFetchException e) {
+            exceptionHandler.exitWithError("Failed to retrieve redmine wiki page", e);
+            return null;  //  tady tu část musím ještě najak poladit , tento krok se nikdy neučiní, jen to umlčuje kompilátor protože tam musí být return, protože má metoda navratový typ
         }
-        return response;
     }
 
 
@@ -164,6 +158,14 @@ public class WikiTransformerCommand implements Runnable {
         } catch (IOException e) {
             exceptionHandler.exitWithError("Failed during run Pandoc", e);
         }
+    }
+
+    private String createJsonUrl(String wikiUrl) {
+        if (wikiUrl == null) {
+            exceptionHandler.exitWithError("WikiUrl can not be null");
+        }
+        System.out.println("Fetching Redmine Wiki page from url: " + wikiUrl + ".json" + "\n");
+        return wikiUrl + ".json";
     }
 
 

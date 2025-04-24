@@ -32,7 +32,7 @@ public class PandocServiceImpl implements PandocService {
             runPandoc(tempInputFile, outputFile);
 
             // Remove the temporary input file
-            Files.deleteIfExists(tempInputFile);  // možná toto dát do finally bloku
+            deleteTempFile(tempInputFile);
 
             System.out.println("Pandoc converted Textile to MediaWiki");
 
@@ -91,8 +91,16 @@ public class PandocServiceImpl implements PandocService {
             throw new IOException("I/O error while executing Pandoc command", e);
         }
 
+    }
 
-
+    private void deleteTempFile(Path tempInputFile) throws IOException {
+        try {
+            Files.deleteIfExists(tempInputFile);
+        } catch (SecurityException e) {
+            throw new IOException("Permission denied, you cannot delete the temporary file after Pandoc conversion ", e);
+        } catch (IOException e) {
+            throw new IOException("I/O error while deleting the temporary file after Pandoc conversion", e);
+        }
     }
 
 }

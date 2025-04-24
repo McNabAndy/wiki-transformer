@@ -94,8 +94,7 @@ public class WikiTransformerCommand implements Runnable {
         RedmineWikiResponseDTO response = fetchRedmineWikiPage(jsonWikiUrl);
 
         // Create unique file name from title and add suffix
-        String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());    // tady mi kompilátor hlásí že by mohla nastat vyjimka NullPointerException, kvuli tomu že response muže být dle kodu null (ve skutečnosti nikdy nemuže  být null protože mi to handler ukončí...)
-
+        String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
         // Extract the content from the response
         String contentWikiPage = response.getWikiPage().getText();
 
@@ -147,7 +146,7 @@ public class WikiTransformerCommand implements Runnable {
             return redmineService.getRedmine(jsonWikiUrl);
         } catch (RedmineFetchException e) {
             exceptionHandler.exitWithError("Failed to retrieve redmine wiki page", e);
-            return null;  //  tady tu část musím ještě najak poladit , tento krok se nikdy neučiní, jen to umlčuje kompilátor protože tam musí být return, protože má metoda navratový typ
+            throw new RuntimeException("This line should never be reached");  // tento kod nidky nenastane, jen pro IDE a abych nemusel vracet null
         }
     }
 

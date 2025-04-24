@@ -7,9 +7,14 @@ package cz.vojtechsika.wiki_transformer.dto;
 
 public class AuthorDTO {
 
-
+    /**
+     * Author id
+     */
     private int id;
 
+    /**
+     * Name of author
+     */
     private String name;
 
 

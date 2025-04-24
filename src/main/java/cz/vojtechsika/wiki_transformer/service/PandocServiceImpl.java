@@ -26,7 +26,6 @@ public class PandocServiceImpl implements PandocService {
      */
     @Override
     public void convertTextileToMediaWiki(String content, String fileName, Path filePath, String outputDirectory) throws IOException {
-
             // Create a temporary file for storing Textile data
             Path tempInputFile = createTempFile(content);
 
@@ -103,6 +102,7 @@ public class PandocServiceImpl implements PandocService {
 
             // Wait for the Pandoc process to complete
             process.waitFor();
+
         } catch (NullPointerException e) {
             throw new IOException("Null argument found in Pandoc command list", e);
         } catch (IndexOutOfBoundsException e) {

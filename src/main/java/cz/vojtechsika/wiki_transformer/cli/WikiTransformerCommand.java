@@ -79,7 +79,6 @@ public class WikiTransformerCommand implements Runnable {
         initializePath(outputDirectory);
         initializeOutputDirectory(filePath);
         getRedmineWikiPage(redmineService, pandocService);
-        System.exit(0);
     }
 
     /**

@@ -21,7 +21,9 @@ public class WikiTransformerApplication {
 
 		return args -> {
 			CommandLine commandLine = new CommandLine(wikiTransformerCommand);
-			commandLine.execute(args);
+			int exitCode = commandLine.execute(args);
+			System.exit(exitCode);
+
 		};
 	}
 

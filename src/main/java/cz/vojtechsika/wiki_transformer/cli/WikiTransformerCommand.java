@@ -79,7 +79,6 @@ public class WikiTransformerCommand implements Runnable {
         initializePath(outputDirectory);
         initializeOutputDirectory(filePath);
         getRedmineWikiPage(redmineService, pandocService);
-        System.exit(0);
     }
 
     /**
@@ -202,7 +201,7 @@ public class WikiTransformerCommand implements Runnable {
      * @param filePath the directory to be validated for write permissions
      * @throws IOException if the directory is not writable or an error occurs during testing
      */
-    private void checkWrite(Path filePath) throws IOException {  // nemel bych zde osšetřit  i tu IvalidPAthException ?
+    private void checkWrite(Path filePath) throws IOException {
         Path testPath = filePath.resolve("test.txt");
         try {
             Files.createFile(testPath);

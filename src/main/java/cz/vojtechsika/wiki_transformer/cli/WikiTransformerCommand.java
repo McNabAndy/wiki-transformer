@@ -5,6 +5,7 @@ import cz.vojtechsika.wiki_transformer.exception.ExceptionHandler;
 import cz.vojtechsika.wiki_transformer.exception.RedmineFetchException;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
+import cz.vojtechsika.wiki_transformer.service.image.ImageService;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ import java.nio.file.Path;
 @CommandLine.Command(name="wiki-transformer", description = "Transforms Textile file to MediaWiki")
 public class WikiTransformerCommand implements Runnable {
 
+    private ImageService imageService;
 
     /**
      * Instance of {@link RedmineService}
@@ -37,7 +39,7 @@ public class WikiTransformerCommand implements Runnable {
     /**
      *  Instance of {@link ExceptionHandler}
      */
-    private ExceptionHandler exceptionHandler;
+    private final  ExceptionHandler exceptionHandler;
 
     /**
      * Path object representing the storage location
@@ -65,10 +67,14 @@ public class WikiTransformerCommand implements Runnable {
      * @param theExceptionHandler  the centralized exception handler used to manage CLI errors and terminate gracefully
      */
     @Autowired
-    public WikiTransformerCommand(RedmineService theRedmineService, PandocService thePandocService, ExceptionHandler theExceptionHandler) {
+    public WikiTransformerCommand(RedmineService theRedmineService,
+                                  PandocService thePandocService,
+                                  ExceptionHandler theExceptionHandler,
+                                  ImageService theImageService) {
         this.redmineService = theRedmineService;
         this.pandocService = thePandocService;
         this.exceptionHandler = theExceptionHandler;
+        this.imageService = theImageService;
     }
 
     /**
@@ -79,6 +85,14 @@ public class WikiTransformerCommand implements Runnable {
         initializePath(outputDirectory);
         initializeOutputDirectory(filePath);
         getRedmineWikiPage(redmineService, pandocService);
+
+        // tady to pak vyladim, ted jen pro testovací účely
+        try {
+            imageService.downloadAllImages(wikiUrl, filePath);
+        } catch (IOException e) {
+            exceptionHandler.exitWithError("Error downloading images", e);
+        }
+
     }
 
     /**

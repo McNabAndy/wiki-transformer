@@ -1,5 +1,7 @@
 package cz.vojtechsika.wiki_transformer.util;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.UUID;
 
@@ -48,5 +50,18 @@ public class FileNameUtil {
         uniqueSuffix = uniqueSuffix.replaceAll("-", "");
 
         return uniqueSuffix;
+    }
+
+
+    public static String getNameWithExtension(String imageUrl) {
+
+        // Crate URI object from url and get path from url - dostanu všechno co je za doménou
+        URI uri = URI.create(imageUrl);
+        String path = uri.getPath();
+
+        // dostanu poslední segment cesty včetně přípony
+        return Paths.get(path).getFileName().toString();
+
+
     }
 }

@@ -85,15 +85,12 @@ public class WikiTransformerCommand implements Runnable {
     public void run() {
         initializePath(outputDirectory);
         initializeOutputDirectory(filePath);
+
         WikiConversionContext context = getRedmineWikiPageContext();
 
         convertWikiPage(context);
-        // tady to pak vyladim, ted jen pro testovací účely
-        try {
-            imageService.downloadAllImages(context);
-        } catch (IOException e) {
-            exceptionHandler.exitWithError("Error downloading images", e);
-        }
+
+        downloadImages(context);
 
     }
 
@@ -138,7 +135,7 @@ public class WikiTransformerCommand implements Runnable {
      */
     private String createUniqueTitle(String theTitle) {
         String sanitizeTitle = FileNameUtil.sanitizeFileName(theTitle);
-        return sanitizeTitle + "_" + FileNameUtil.createUniqueSuffix();
+        return sanitizeTitle + "_" + FileNameUtil.createUniqueSuffix(wikiUrl);
     }
 
 
@@ -238,6 +235,15 @@ public class WikiTransformerCommand implements Runnable {
             throw new IOException("Failed to write to the specified output path: " + filePath.toAbsolutePath(), e);
         } catch (SecurityException e) {
             throw new IOException("Write access denied for the directory: " + filePath.toAbsolutePath(), e);
+        }
+    }
+
+
+    private void downloadImages(WikiConversionContext context) {
+        try {
+            imageService.downloadAllImages(context);
+        } catch (IOException e) {
+            exceptionHandler.exitWithError("Error downloading images", e);
         }
     }
 

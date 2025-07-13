@@ -42,14 +42,12 @@ public class FileNameUtil {
      * Generates a unique suffix string based on a random UUID.
      * @return unique suffix string without dashes
      */
-    public static String createUniqueSuffix(){
-        // Generate random 128-bit long number in hex characters separated by “-“
-        String uniqueSuffix = UUID.randomUUID().toString();
+    public static String createUniqueSuffix(String wikiUrl){
+        // Vypočítá z url hash který pokud budu stejnou url adresu stahovat znovu vygeneruje stejný has, kterému odstarním mínus tím že ho převedu na absolutní hodnotu
+        int code = Math.abs(wikiUrl.hashCode());
 
-        // Remove underscores
-        uniqueSuffix = uniqueSuffix.replaceAll("-", "");
-
-        return uniqueSuffix;
+        System.out.println(code);
+        return String.valueOf(code);
     }
 
 

@@ -38,7 +38,7 @@ public class PandocServiceImpl implements PandocService {
             // Remove the temporary input file
             deleteTempFile(tempInputFile);
 
-            System.out.println("Pandoc converted Textile to MediaWiki");
+            System.out.println("Pandoc converted Textile to MediaWiki: " + outputFile.toAbsolutePath().toString());
     }
 
 

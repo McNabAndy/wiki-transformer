@@ -54,7 +54,6 @@ public class FileNameUtil {
 
 
     public static String getNameWithExtension(String imageUrl) {
-
         // Crate URI object from url and get path from url - dostanu všechno co je za doménou
         URI uri = URI.create(imageUrl);
         String path = uri.getPath();

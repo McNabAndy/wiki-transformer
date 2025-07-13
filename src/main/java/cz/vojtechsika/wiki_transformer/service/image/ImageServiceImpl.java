@@ -1,5 +1,6 @@
 package cz.vojtechsika.wiki_transformer.service.image;
 
+import cz.vojtechsika.wiki_transformer.dto.WikiConversionContext;
 import cz.vojtechsika.wiki_transformer.exception.ExceptionHandler;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,17 +32,17 @@ public class ImageServiceImpl implements ImageService{
 
 
     @Override
-    public void downloadAllImages( String url, Path filePath) throws IOException {
+    public void downloadAllImages(WikiConversionContext context) throws IOException {
 
         // získání listu url
-        List<String> imageUrls = imageExtractor.extractImageUrls(url);
+        List<String> imageUrls = imageExtractor.extractImageUrls(context.getWikiUrl());
         System.out.println(imageUrls);
 
         List<String> filteredImageUrls = imageExtractor.filteredImageUrls(imageUrls);
         System.out.println(filteredImageUrls);
 
         // musim si připravit kam budu stahovat - adresář
-        Path downloadDir = filePath.resolve("download-img");
+        Path downloadDir = context.getFilePath().resolve(context.getUniqueTitle());
         try {
             Files.createDirectories(downloadDir);
             System.out.println("Složka pro obrázky připravena: " + downloadDir.toAbsolutePath());

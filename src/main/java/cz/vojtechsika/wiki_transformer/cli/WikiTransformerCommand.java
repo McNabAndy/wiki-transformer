@@ -1,6 +1,7 @@
 package cz.vojtechsika.wiki_transformer.cli;
 
 import cz.vojtechsika.wiki_transformer.dto.RedmineWikiResponseDTO;
+import cz.vojtechsika.wiki_transformer.dto.WikiConversionContext;
 import cz.vojtechsika.wiki_transformer.exception.ExceptionHandler;
 import cz.vojtechsika.wiki_transformer.exception.RedmineFetchException;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
@@ -24,7 +25,7 @@ import java.nio.file.Path;
 @CommandLine.Command(name="wiki-transformer", description = "Transforms Textile file to MediaWiki")
 public class WikiTransformerCommand implements Runnable {
 
-    private ImageService imageService;
+    private final ImageService imageService;
 
     /**
      * Instance of {@link RedmineService}
@@ -53,7 +54,7 @@ public class WikiTransformerCommand implements Runnable {
     private String wikiUrl;
 
     /**
-     *  CLI option for specifying the output directory where the converted MediaWiki file will be saved..
+     *  CLI option for specifying the output directory where the converted MediaWiki file will be saved.
      */
     @CommandLine.Option(names = {"--output-dir", "-o"}, description = "File path for outputs", required = true )
     private String outputDirectory;
@@ -84,11 +85,12 @@ public class WikiTransformerCommand implements Runnable {
     public void run() {
         initializePath(outputDirectory);
         initializeOutputDirectory(filePath);
-        getRedmineWikiPage(redmineService, pandocService);
+        WikiConversionContext context = getRedmineWikiPageContext();
 
+        convertWikiPage(context);
         // tady to pak vyladim, ted jen pro testovací účely
         try {
-            imageService.downloadAllImages(wikiUrl, filePath);
+            imageService.downloadAllImages(context);
         } catch (IOException e) {
             exceptionHandler.exitWithError("Error downloading images", e);
         }
@@ -98,10 +100,8 @@ public class WikiTransformerCommand implements Runnable {
     /**
      * Fetches the Redmine Wiki page content and converts it to MediaWiki format.
      *
-     * @param redmineService The service used to fetch the Redmine Wiki page.
-     * @param pandocService  The service used to convert Textile format to MediaWiki format.
      */
-    private void getRedmineWikiPage(RedmineService redmineService, PandocService pandocService) {
+    private WikiConversionContext getRedmineWikiPageContext() {
         // Construct the API endpoint for fetching the Redmine Wiki page
         String jsonWikiUrl = createJsonUrl(wikiUrl);
         // Fetch data from Redmine API
@@ -112,8 +112,22 @@ public class WikiTransformerCommand implements Runnable {
         String uniqueTitle = createUniqueTitle(response.getWikiPage().getTitle());
         // Extract the content from the response
         String contentWikiPage = response.getWikiPage().getText();
+
+        // Create WikiConversionContext
+        WikiConversionContext context = new WikiConversionContext();
+        context.setUniqueTitle(uniqueTitle);
+        context.setWikiText(contentWikiPage);
+        context.setWikiUrl(wikiUrl);
+        context.setFilePath(filePath);
+        context.setOutputDir(outputDirectory);
+
+        return context;
+    }
+
+
+    private void convertWikiPage(WikiConversionContext context) {
         // Convert and save the content
-        runPandocService(contentWikiPage, uniqueTitle);
+        runPandocService(context.getWikiText(), context.getUniqueTitle());
     }
 
     /**

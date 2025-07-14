@@ -5,6 +5,7 @@ import cz.vojtechsika.wiki_transformer.dto.WikiConversionContext;
 import cz.vojtechsika.wiki_transformer.exception.ExceptionHandler;
 import cz.vojtechsika.wiki_transformer.exception.RedmineFetchException;
 import cz.vojtechsika.wiki_transformer.service.PandocService;
+import cz.vojtechsika.wiki_transformer.service.PathValidationService;
 import cz.vojtechsika.wiki_transformer.service.RedmineService;
 import cz.vojtechsika.wiki_transformer.service.image.ImageService;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
@@ -25,6 +26,14 @@ import java.nio.file.Path;
 @CommandLine.Command(name="wiki-transformer", description = "Transforms Textile file to MediaWiki")
 public class WikiTransformerCommand implements Runnable {
 
+    /**
+     * Service to validate write permissions
+     */
+    private final PathValidationService pathValidationService;
+
+    /**
+     *  Service responsible for extracting and downloading image
+     */
     private final ImageService imageService;
 
     /**
@@ -63,23 +72,33 @@ public class WikiTransformerCommand implements Runnable {
     /**
      * Constructor that initializes the required services.
      *
-     * @param theRedmineService    the service responsible for fetching Redmine Wiki page data
-     * @param thePandocService     the service responsible for converting content from Textile to MediaWiki format
-     * @param theExceptionHandler  the centralized exception handler used to manage CLI errors and terminate gracefully
+     * @param theRedmineService        the service responsible for fetching Redmine Wiki page data
+     * @param thePandocService         the service responsible for converting content from Textile to MediaWiki format
+     * @param theExceptionHandler      the centralized exception handler used to manage CLI errors and terminate gracefully
+     * @param theImageService          the service for downloading referenced images
+     * @param thePathValidationService the service for validating output path
      */
     @Autowired
     public WikiTransformerCommand(RedmineService theRedmineService,
                                   PandocService thePandocService,
                                   ExceptionHandler theExceptionHandler,
-                                  ImageService theImageService) {
+                                  ImageService theImageService,
+                                  PathValidationService thePathValidationService) {
         this.redmineService = theRedmineService;
         this.pandocService = thePandocService;
         this.exceptionHandler = theExceptionHandler;
         this.imageService = theImageService;
+        this.pathValidationService = thePathValidationService;
     }
 
     /**
-     * Runs the transformation process by fetching the Redmine Wiki page and converting its content.
+     * Entry point for the CLI command. Orchestrates the full pipeline:
+     * <ol>
+     *   <li>Initialize the output path and directory.</li>
+     *   <li>Fetch and parse the Redmine wiki page, building the conversion context.</li>
+     *   <li>Convert the wiki content to MediaWiki format using Pandoc.</li>
+     *   <li>Download all referenced images into the output folder.</li>
+     * </ol>
      */
     @Override
     public void run() {
@@ -91,12 +110,10 @@ public class WikiTransformerCommand implements Runnable {
         convertWikiPage(context);
 
         downloadImages(context);
-
     }
 
     /**
-     * Fetches the Redmine Wiki page content and converts it to MediaWiki format.
-     *
+     * Fetch and parse the Redmine wiki page, building the conversion context.
      */
     private WikiConversionContext getRedmineWikiPageContext() {
         // Construct the API endpoint for fetching the Redmine Wiki page
@@ -121,11 +138,16 @@ public class WikiTransformerCommand implements Runnable {
         return context;
     }
 
-
+    /**
+     * Convert the wiki content to MediaWiki format using Pandoc
+     *
+     * @param context the conversion context of wiki page
+     */
     private void convertWikiPage(WikiConversionContext context) {
         // Convert and save the content
         runPandocService(context.getWikiText(), context.getUniqueTitle());
     }
+
 
     /**
      * Creates a unique, filesystem-safe title by sanitizing the input and appending a unique suffix.
@@ -146,7 +168,7 @@ public class WikiTransformerCommand implements Runnable {
      */
     private void initializePath(String outputDirectory) {
         try {
-            filePath = Path.of(outputDirectory);   // nastaví třídě atribut filePath který pak mužu dál zpracovat
+            filePath = Path.of(outputDirectory);
         } catch (InvalidPathException e) {
             exceptionHandler.exitWithError("The path can not be converted to a valid path: ", e);
         }
@@ -162,8 +184,8 @@ public class WikiTransformerCommand implements Runnable {
         try {
             // If the directory does not exist, it will be created automatically.
             Files.createDirectories(filePath);
-            System.out.println("Output directory path : " + filePath.toAbsolutePath() +"\n");
-            checkWrite(filePath);  // ruční kontrola zda lze do uvedené cesty opravdu zapisovat, pokud ne ukončí mi to program
+            System.out.println("Output directory : " + filePath.toAbsolutePath() +"\n");
+            pathValidationService.checkWrite(filePath);
         } catch (FileAlreadyExistsException e) {
             exceptionHandler.exitWithError("The path exists but it is not directory", e);
         } catch (SecurityException e) {
@@ -221,24 +243,10 @@ public class WikiTransformerCommand implements Runnable {
 
 
     /**
-     * Checks whether the specified path is writable by attempting to create and delete a temporary file.
+     * Download all referenced images into the output folder
      *
-     * @param filePath the directory to be validated for write permissions
-     * @throws IOException if the directory is not writable or an error occurs during testing
+     * @param context the conversion context of wiki page
      */
-    private void checkWrite(Path filePath) throws IOException {
-        Path testPath = filePath.resolve("test.txt");
-        try {
-            Files.createFile(testPath);
-            Files.deleteIfExists(testPath);
-        } catch (IOException e) {
-            throw new IOException("Failed to write to the specified output path: " + filePath.toAbsolutePath(), e);
-        } catch (SecurityException e) {
-            throw new IOException("Write access denied for the directory: " + filePath.toAbsolutePath(), e);
-        }
-    }
-
-
     private void downloadImages(WikiConversionContext context) {
         try {
             imageService.downloadAllImages(context);

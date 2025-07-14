@@ -1,10 +1,15 @@
 package cz.vojtechsika.wiki_transformer.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * DTO class representing a wrapper for the JSON response from the Redmine Wiki API.
  */
+
+@Getter
+@Setter
 public class RedmineWikiResponseDTO {
 
     /**
@@ -14,13 +19,4 @@ public class RedmineWikiResponseDTO {
     private WikiPageDTO wikiPage;
 
 
-    // Getter and Setter region
-
-    public WikiPageDTO getWikiPage() {
-        return wikiPage;
-    }
-
-    public void setWikiPage(WikiPageDTO wikiPage) {
-        this.wikiPage = wikiPage;
-    }
 }

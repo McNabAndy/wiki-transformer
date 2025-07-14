@@ -2,9 +2,9 @@
 Simple CLI application written in Java that converts Redmine Wiki pages (Textile format) to MediaWiki format using Pandoc.
 
 ## Features
-- Fetches a Wiki page from a specified URL.
-- Retrieves content in Textile format from a Redmine Wiki instance.
-- Prepares the content for further processing.
+- Fetches a Redmine Wiki page from a specified URL.
+- Loads content in Textile format from Redmine and **converts it to MediaWiki** markup at the given URL.
+- Detects images on the page, **downloads them**, and **saves them to disk** for further use.
 
 ## Requirements
 - Java 21
@@ -30,7 +30,7 @@ Clone the repository and open it in your preferred IDE (e.g., IntelliJ IDEA, Ecl
 
 
 ## Roadmap
-- Add support for automatic conversion to MediaWiki format.
+- Support batch downloading of multiple Redmine Wiki pages (and their images) in one go.
 
 ## License
 This project is licensed under the MIT License. Feel free to modify and use it.

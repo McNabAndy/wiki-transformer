@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2025-07-14
+### Added
+- Image download support: detects images on the Redmine Wiki page, downloads them, and saves them to disk.
+- Print the absolute path and filename of the converted MediaWiki file after processing.
+- Utility method to extract the filename from a given URL.
+
+### Changed
+- Filename suffix generation now includes a hash code derived from the source URL to ensure uniqueness.
+
+
 ## [0.2.0] - 2025-04-24
 ### Added
 - New CLI option `--output-dir` allowing users to specify custom output directory for the converted file.

@@ -43,7 +43,7 @@ public class ImageDownloader {
      * @param imageUrl the absolute URL of the image to download
      * @return a ResponseEntity whose body is the raw image bytes
      */
-    public ResponseEntity<byte[]> getImage(String imageUrl) {
+    public ResponseEntity<byte[]> getImage(String imageUrl) throws ImageFetchException{
         try{
             ResponseEntity<byte[]> response = restClient.get()
                     .uri(imageUrl)

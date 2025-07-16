@@ -39,7 +39,7 @@ class ImageDownloaderTest {
 
     @Test
     @DisplayName("Download image request")
-    void getImage_validUrl_returnsResponseWithBytes() {
+    void getImage_validUrl_returnsResponseWithBytes() throws ImageFetchException {
         // Arrange
         byte[] expectedBytes = new byte[]{1, 2, 3};
         ResponseEntity<byte[]> responseEntity = ResponseEntity.ok(expectedBytes);
@@ -77,7 +77,7 @@ class ImageDownloaderTest {
 
         // Act and Assert
         assertThrows(ImageFetchException.class, () ->
-                imageDownloader.getImage("https://example.com/page/image.jpg"), "Should throw HttpClientErrorException.NotFound");
+                imageDownloader.getImage("https://example.com/page/image.jpg"), "Should throw RestClientException");
 
     }
 

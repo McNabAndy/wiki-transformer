@@ -1,5 +1,5 @@
 # Wiki Transformer
-Simple CLI application written in Java that converts Redmine Wiki pages (Textile format) to MediaWiki format using Pandoc.
+Simple CLI application written in Java that converts Redmine Wiki pages (Textile format) to MediaWiki format using Pandoc, with built-in support for downloading the page’s images.
 
 ## Features
 - Fetches a Redmine Wiki page from a specified URL.

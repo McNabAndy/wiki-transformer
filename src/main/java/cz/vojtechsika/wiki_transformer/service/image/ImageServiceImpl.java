@@ -1,6 +1,7 @@
 package cz.vojtechsika.wiki_transformer.service.image;
 
 import cz.vojtechsika.wiki_transformer.dto.WikiConversionContext;
+import cz.vojtechsika.wiki_transformer.exception.ImageFetchException;
 import cz.vojtechsika.wiki_transformer.service.PathValidationService;
 import cz.vojtechsika.wiki_transformer.util.FileNameUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -141,7 +142,7 @@ public class ImageServiceImpl implements ImageService{
                 throw new IOException("Image download returned empty body for URL: " + imageUrl);
             }
             return imageData;
-        } catch (RestClientException e){
+        } catch (ImageFetchException e){
             throw new IOException("Error fetching image from " + imageUrl, e);
         }
     }

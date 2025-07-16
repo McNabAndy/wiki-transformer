@@ -1,9 +1,12 @@
 package cz.vojtechsika.wiki_transformer.service.image;
 
+import cz.vojtechsika.wiki_transformer.exception.ImageFetchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 
 /**
@@ -41,12 +44,20 @@ public class ImageDownloader {
      * @return a ResponseEntity whose body is the raw image bytes
      */
     public ResponseEntity<byte[]> getImage(String imageUrl) {
-        ResponseEntity<byte[]> response = restClient.get()
-                .uri(imageUrl)
-                .retrieve()
-                .toEntity(byte[].class);
+        try{
+            ResponseEntity<byte[]> response = restClient.get()
+                    .uri(imageUrl)
+                    .retrieve()
+                    .toEntity(byte[].class);
+            return response;
+        } catch (HttpClientErrorException.NotFound e){
+            throw new ImageFetchException("Image url not found", e);
+        } catch (RestClientException e) {
+            throw new ImageFetchException("Communication error with the server while fetching image", e);
+        }
 
-        return response;
+
+
     }
 
 

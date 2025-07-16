@@ -1,5 +1,6 @@
 package cz.vojtechsika.wiki_transformer.service.image;
 
+import cz.vojtechsika.wiki_transformer.exception.ImageFetchException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,7 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -53,4 +56,31 @@ class ImageDownloaderTest {
         assertEquals(expectedBytes, actual.getBody(), "Should return the expected bytes");
 
     }
+
+    @Test
+    @DisplayName("Throw ImageFetchException on HttpClientErrorException")
+    void getImage_onHttpClientError_shouldThrowImageFetchException() {
+        // Arrange
+        when(restClient.get()).thenThrow(HttpClientErrorException.NotFound.class);
+
+        // Act and Assert
+        assertThrows(ImageFetchException.class, () ->
+                imageDownloader.getImage("https://example.com/page/image.jpg"), "Should throw HttpClientErrorException.NotFound");
+
+    }
+
+    @Test
+    @DisplayName("Throw ImageFetchException on RestClientException")
+    void getImage_onRestClientException_shouldThrowImageFetchException() {
+        // Arrange
+        when(restClient.get()).thenThrow(RestClientException.class);
+
+        // Act and Assert
+        assertThrows(ImageFetchException.class, () ->
+                imageDownloader.getImage("https://example.com/page/image.jpg"), "Should throw HttpClientErrorException.NotFound");
+
+    }
+
 }
+
+
